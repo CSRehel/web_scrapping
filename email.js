@@ -11,12 +11,13 @@ const transporter = nodemailer.createTransport({
 });
 
 // Función para enviar correo electrónico
-function enviarCorreo() {
+function enviarCorreo(description) {
     const mailOptions = {
         from: process.env.EMAIL_USER,
         to: process.env.EMAIL_to,
         subject: 'Hora disponible',
-        html: `<h3>Revisar especialidad de oftalmología:</h3></br><h3><a href="${process.env.URL}">Ver página</a></h3>`
+        html: `<h3>Especialidad de oftalmología: ${description}</h3></br>
+               <h3><a href="${process.env.URL}">Ver página</a></h3>`
     };
 
     transporter.sendMail(mailOptions, function (error, info) {

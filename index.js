@@ -3,7 +3,7 @@ const puppeteer = require('puppeteer');
 require('dotenv').config();
 
 async function ejecutarPeriodicamente() {
-    const intervalo = 5 * 60 * 1000;
+    const intervalo = 10 * 60 * 1000;
 
     while (true) {
         await ejecutarPagina();
@@ -28,24 +28,32 @@ async function ejecutarPagina() {
         await page.waitForSelector('input#dnn_ctr10551_WCitawebmovil_txtoftapac');
         await page.type('input#dnn_ctr10551_WCitawebmovil_txtoftapac', '111111111');
         
-
         await page.waitForSelector('a#dnn_ctr10551_WCitawebmovil_imbBuscar');
         await page.click('a#dnn_ctr10551_WCitawebmovil_imbBuscar');
-      
-        //! analizar la página resultante para ver si el texto a cambiado
-        await page.waitForSelector('div[class="msg_esp_relac_azul');
-        const textoElemento = await page.$eval('div[class="msg_esp_relac_azul"]', element => element.textContent);
-        
-        if(textoElemento !== 'No hay Disponibilidad de agendas en el Hospital Clínico Universidad de Chile') {
-            console.log('Hay horas disponibles!');
-            await enviarCorreo();
-        } else {
-            console.log('Aun no hay horas disponibles');
+
+        //! -------------------------------------------------------------------------
+        // Obtener una lista de todos los botones en la tabla
+        await page.waitForSelector('table#dnn_ctr10551_WCitawebmovil_GridView1');
+        const rows = await page.$$('table#dnn_ctr10551_WCitawebmovil_GridView1 tr');
+
+        for (const row of rows) {
+            const boton = await row.$$('input[type="button"].btn.btn-primary');
+            if(!boton || boton.length === 0) continue;
+
+            const cells = await row.$$('td');
+            const doctor = await cells[1].evaluate(element => element.textContent.trim());
+            const valor = await page.evaluate(element => element.value, boton[0]);
+            
+            if (valor !== 'Agenda completa') {
+                let description = `Hora disponible: ${valor} con el meddico: ${doctor}`;
+                await enviarCorreo(description);
+            }
         }
-        
+
         await browser.close();
     } catch (e) {
         console.error(e);
+        await browser.close();
     }
 }
 
